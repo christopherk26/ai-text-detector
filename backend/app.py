@@ -1,3 +1,4 @@
+# Update these lines in your app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
@@ -5,7 +6,8 @@ import torch
 import numpy as np
 
 app = Flask(__name__)
-CORS(app)  # Enable cross-origin requests for local development
+# More explicit CORS configuration
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 # Load model
 print("Loading model...")
@@ -86,4 +88,4 @@ def health_check():
     return jsonify({'status': 'ok', 'model_loaded': model is not None})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
