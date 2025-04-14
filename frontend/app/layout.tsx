@@ -25,19 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`min-h-screen bg-background ${geistSans.variable} ${geistMono.variable}`}>
-        <div className="flex min-h-screen flex-col">
-          <header className="border-b">
-            <div className="container flex h-16 items-center justify-between py-4">
-              <h1 className="text-xl font-bold"></h1>
-            </div>
-          </header>
-          <main className="flex-1">{children}</main>
-          <footer className="border-t py-4">
-            <div className="container flex justify-center text-sm text-muted-foreground">
-              
-            </div>
-          </footer>
-        </div>
+        <main className="min-h-screen py-8">{children}</main>
       </body>
     </html>
   );
