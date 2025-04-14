@@ -1,3 +1,5 @@
+# /backend/app.py
+
 # Update these lines in your app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -30,7 +32,8 @@ def process_text_with_sliding_window(text, window_size=256, overlap=128):
         inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=window_size)
         with torch.no_grad():
             outputs = model(**inputs)
-            predictions = torch.softmax(outputs.logits, dim=-1)
+            temperature = 2
+            predictions = torch.softmax(outputs.logits / temperature, dim=-1)
         return predictions[0][1].item()  # Return AI probability
     
     # For longer texts, use sliding window
@@ -48,7 +51,8 @@ def process_text_with_sliding_window(text, window_size=256, overlap=128):
         inputs = tokenizer(window_text, return_tensors="pt", padding=True, truncation=True, max_length=window_size)
         with torch.no_grad():
             outputs = model(**inputs)
-            predictions = torch.softmax(outputs.logits, dim=-1)
+            temperature = 2.0
+            predictions = torch.softmax(outputs.logits / temperature, dim=-1)
         probabilities.append(predictions[0][1].item())
     
     # Return the average probability
@@ -87,5 +91,61 @@ def detect_ai_text():
 def health_check():
     return jsonify({'status': 'ok', 'model_loaded': model is not None})
 
+
+
+# Add this new endpoint to your /backend/app.py file
+
+@app.route('/api/tokenize', methods=['POST'])
+def tokenize_text():
+    data = request.json
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+    
+    try:
+        # Tokenize the text using the DistilBERT tokenizer
+        tokens = tokenizer.tokenize(text)
+        
+        # Convert tokens to token IDs
+        token_ids = tokenizer.convert_tokens_to_ids(tokens)
+        
+        # Get the full encoded representation (including special tokens)
+        encoded = tokenizer.encode_plus(
+            text, 
+            add_special_tokens=True,
+            padding=False,
+            truncation=True,
+            max_length=512,
+            return_attention_mask=True
+        )
+        
+        # Extract the full token IDs (with special tokens)
+        full_token_ids = encoded['input_ids']
+        
+        # Get the full tokens (with special tokens)
+        full_tokens = tokenizer.convert_ids_to_tokens(full_token_ids)
+        
+        # Get the attention mask
+        attention_mask = encoded['attention_mask']
+        
+        # Count words for stats
+        words = text.split()
+        
+        return jsonify({
+            'tokens': tokens,
+            'token_ids': token_ids,
+            'full_tokens': full_tokens,
+            'full_token_ids': full_token_ids,
+            'attention_mask': attention_mask,
+            'stats': {
+                'token_count': len(tokens),
+                'word_count': len(words)
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': f'Error tokenizing text: {str(e)}'}), 500
+
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='127.0.0.1', port=5000)

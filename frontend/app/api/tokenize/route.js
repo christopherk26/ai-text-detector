@@ -1,16 +1,14 @@
+// Create this file at: frontend/app/api/tokenize/route.js
 
-// This is a Next.js API route that proxies requests to a Flask backend.
-
-// app/api/detect/route.js
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    console.log('API route received request:', body);
+    console.log('Tokenize API route received request:', body);
     
     // Forward the request to your Flask backend
-    const response = await fetch('http://127.0.0.1:5000/api/detect', {
+    const response = await fetch('http://127.0.0.1:5000/api/tokenize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -18,11 +16,11 @@ export async function POST(request) {
       body: JSON.stringify(body),
     });
     
-    console.log('Flask response status:', response.status);
+    console.log('Flask tokenize response status:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Flask error response:', errorText);
+      console.error('Flask tokenize error response:', errorText);
       return NextResponse.json(
         { error: `Backend error: ${response.status} ${response.statusText}`, details: errorText },
         { status: response.status }
@@ -30,12 +28,12 @@ export async function POST(request) {
     }
     
     const data = await response.json();
-    console.log('Successful response from Flask:', data);
+    console.log('Successful response from Flask tokenize:', data);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('API route error:', error);
+    console.error('Tokenize API route error:', error);
     return NextResponse.json(
-      { error: 'Failed to proxy request to backend', message: error.message },
+      { error: 'Failed to proxy tokenization request to backend', message: error.message },
       { status: 500 }
     );
   }
