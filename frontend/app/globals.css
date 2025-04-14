@@ -120,3 +120,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+textarea {
+  /* Prevent horizontal scrollbar from appearing */
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background-color: oklch(0.7 0 0);
+  border-radius: 6px;
+}
+
+.dark textarea::-webkit-scrollbar-thumb {
+  background-color: oklch(0.4 0 0);
+}
+
+textarea:hover::-webkit-scrollbar-thumb {
+  background-color: oklch(0.6 0 0);
+}
+
+.dark textarea:hover::-webkit-scrollbar-thumb {
+  background-color: oklch(0.5 0 0);
+}
+
+/* Hide the scrollbar corner completely */
+textarea::-webkit-scrollbar-corner {
+  display: none;
+}
