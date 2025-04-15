@@ -1,3 +1,16 @@
+see 
+
+https://github.com/christopherk26/ai-text-detector/blob/main/Ai%20detector%20presentaiton%20-%20Christopher%20K%20(1).pdf
+
+
+
+
+
+
+
+
+
+
 # AI Text Detector
 
 A neural network-based application that distinguishes between human-written and AI-generated text using DistilBERT.
