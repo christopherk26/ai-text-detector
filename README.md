@@ -1,4 +1,4 @@
-# Note: See the slideshow PDF in the root directory. 
+# Note: See the slideshow PDF in the root directory. There is also the text examples given in the root directory in a PDF.
 
 
 # AI Text Detector
