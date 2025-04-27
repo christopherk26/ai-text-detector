@@ -1,5 +1,3 @@
-//frontend/app/page.tsx
-
 'use client';
 
 import { useState } from 'react';
@@ -7,10 +5,63 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, FileText, Check } from 'lucide-react';
+import { AlertCircle, FileText, Check, HelpCircle, AlertTriangle, Star } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import TokenizationVisualization from '@/components/TokenizationVisualization';
 import ModelExplanation from '@/components/ModelExplanation';
+
+// Define confidence categories with their ranges and explanations
+const confidenceCategories = {
+  "Definitely Human": {
+    range: [0, 20],
+    color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500",
+    icon: <Check className="h-4 w-4" />,
+    explanation: "The text shows strong indicators of human authorship with very high confidence."
+  },
+  "Likely Human": {
+    range: [20, 40],
+    color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500",
+    icon: <Check className="h-4 w-4" />,
+    explanation: "The text likely has human authorship, but shows some patterns that could be AI-like."
+  },
+  "Uncertain": {
+    range: [40, 60],
+    color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500",
+    icon: <HelpCircle className="h-4 w-4" />,
+    explanation: "The model is uncertain about authorship. The text has mixed characteristics of both human and AI writing."
+  },
+  "Likely AI": {
+    range: [60, 80],
+    color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500",
+    icon: <AlertTriangle className="h-4 w-4" />,
+    explanation: "The text likely has AI authorship, showing many patterns typical of AI-generated content."
+  },
+  "Definitely AI": {
+    range: [80, 100],
+    color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500",
+    icon: <AlertCircle className="h-4 w-4" />,
+    explanation: "The text shows strong indicators of AI generation with very high confidence."
+  }
+};
+
+// Simple tooltip component
+const Tooltip: React.FC<{ children: React.ReactNode; content: string }> = ({ children, content }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  return (
+    <div className="relative inline-block"
+         onMouseEnter={() => setIsVisible(true)}
+         onMouseLeave={() => setIsVisible(false)}>
+      {children}
+      {isVisible && (
+        <div className="absolute z-10 w-64 p-2 text-sm bg-black text-white rounded shadow-lg bottom-full left-1/2 transform -translate-x-1/2 -translate-y-2">
+          {content}
+          <div className="absolute w-3 h-3 bg-black transform rotate-45 -bottom-1 left-1/2 -translate-x-1/2"></div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function Home() {
   const [text, setText] = useState('');
@@ -26,9 +77,37 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to count words in text
+  const countWords = (text: string): number => {
+    // Remove extra whitespace and split by spaces
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  // Function to get confidence category based on AI percentage
+  const getConfidenceCategory = (aiPercentage: number) => {
+    for (const [category, details] of Object.entries(confidenceCategories)) {
+      const [min, max] = details.range;
+      if (aiPercentage >= min && aiPercentage <= max) {
+        return { category, details };
+      }
+    }
+    return { 
+      category: "Uncertain", 
+      details: confidenceCategories["Uncertain"] 
+    };
+  };
+
   const analyzeText = async () => {
+    // Check if text is empty
     if (!text.trim()) {
       setError('Please enter some text to analyze');
+      return;
+    }
+
+    // Check word count
+    const wordCount = countWords(text);
+    if (wordCount < 100) {
+      setError(`Please enter at least 100 words for accurate analysis. Current word count: ${wordCount}`);
       return;
     }
 
@@ -81,7 +160,7 @@ export default function Home() {
         <CardHeader>
           <CardTitle>Text Analysis</CardTitle>
           <CardDescription>
-            Paste your text below to analyze it
+            Paste your text below to analyze it (minimum 100 words for accurate results)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -91,11 +170,16 @@ export default function Home() {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
+          <div className="text-sm text-muted-foreground">
+            Word count: {countWords(text)} {countWords(text) < 100 && 
+              <span className="text-destructive">(minimum 100 words required)</span>
+            }
+          </div>
         </CardContent>
         <CardFooter className="flex justify-end">
           <Button 
             onClick={analyzeText} 
-            disabled={loading || !text.trim()}
+            disabled={loading || !text.trim() || countWords(text) < 100}
           >
             {loading ? 'Analyzing...' : 'Analyze Text'}
           </Button>
@@ -112,25 +196,21 @@ export default function Home() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
+              {/* Display confidence category instead of binary result */}
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium">Classification</h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  result.result === "AI-generated" 
-                    ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500"
-                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500"
-                }`}>
-                  {result.result === "AI-generated" ? (
-                    <span className="flex items-center gap-1">
-                      <AlertCircle className="h-4 w-4" />
-                      AI-Generated
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      <Check className="h-4 w-4" />
-                      Human-Written
-                    </span>
-                  )}
-                </span>
+                {(() => {
+                  const { category, details } = getConfidenceCategory(result.ai_percentage);
+                  return (
+                    <Tooltip content={details.explanation}>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${details.color} cursor-help`}>
+                        {details.icon}
+                        {category}
+                        <HelpCircle className="h-3 w-3 ml-1 opacity-70" />
+                      </span>
+                    </Tooltip>
+                  );
+                })()}
               </div>
               <div className="space-y-1">
                 <div className="flex justify-between text-sm">
@@ -141,8 +221,9 @@ export default function Home() {
                   value={result.ai_percentage} 
                   className="h-2" 
                 />
-                <div className="flex justify-end text-sm font-medium">
-                  {result.ai_percentage}% likely to be AI-generated
+                <div className="flex justify-between text-sm font-medium">
+                  <span>{Math.round((100 - result.ai_percentage) * 100) / 100}% human-like</span>
+                  <span>{Math.round(result.ai_percentage * 100) / 100}% AI-like</span>
                 </div>
               </div>
             </div>
